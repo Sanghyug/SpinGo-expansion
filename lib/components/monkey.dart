@@ -87,11 +87,12 @@ class Monkey extends SpriteAnimationComponent
   @override
   void update(double dt) {
     super.update(dt);
+
     if (isAttacking) return;
+    if (!game.canStartGimmick) return;
 
     _timer += dt;
 
-// 레벨이 올라갈수록 등장 속도 빨라짐
     if (_timer > _nextInterval) {
       _timer = 0;
       _chooseTargetAndAttack();
@@ -99,6 +100,8 @@ class Monkey extends SpriteAnimationComponent
   }
 
   void _chooseTargetAndAttack() {
+    if (!game.canStartGimmick) return;
+
     final targetPoles = game.children.whereType<Pole>().toList();
     if (targetPoles.isEmpty) return;
 
@@ -146,7 +149,7 @@ class Monkey extends SpriteAnimationComponent
     animation = _exitAnimation;
 
     add(MoveEffect.to(
-        Vector2(-250, game.size.y),
+        Vector2(game.size.x + 250, game.size.y),
         EffectController(duration: 1.5),
         onComplete: () {
           isAttacking = false;

@@ -44,6 +44,9 @@ class SoundManager {
 
   static Future<void> forceMainLoop() => _startLoop('main.mp3', force: true);
 
+  static Future<void> forceWelcomeLoop() =>
+      _startLoop('welcome.mp3', force: true);
+
   static Future<void> stopBgm() async {
     await _bgm.stop();
   }
@@ -105,17 +108,12 @@ class SoundManager {
       await _monkeyPlayer!.setVolume(0.8);
 
       _monkeyPlayer!.onPlayerComplete.listen((_) async {
-        await stopMonkeySfx();
+        await stopMonkeySfx(restartBgm: false);
       });
 
       await _monkeyPlayer!.play(AssetSource('audio/monkey_sound.mp3'));
-
-      Future.delayed(const Duration(milliseconds: 300), () {
-        forceMainLoop();
-      });
     } catch (e) {
       debugPrint('[SoundManager] Monkey SFX play failed: $e');
-      forceMainLoop();
     }
   }
 
@@ -132,6 +130,24 @@ class SoundManager {
 
     if (restartBgm && !_muted) {
       forceMainLoop();
+    }
+  }
+
+  static Future<void> stopAllSfx({bool stopMonkey = true}) async {
+    if (stopMonkey) {
+      await stopMonkeySfx(restartBgm: false);
+    }
+
+    final players = List<AudioPlayer>.from(_sfxPlayers);
+    _sfxPlayers.clear();
+
+    for (final p in players) {
+      try {
+        await p.stop();
+        await p.dispose();
+      } catch (e) {
+        debugPrint('[SoundManager] SFX stop failed: $e');
+      }
     }
   }
 

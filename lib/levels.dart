@@ -179,7 +179,7 @@ final List<Level> expertLevels = [
       messageKey: "q_lv1",
       sets: List.generate(5, (_) => PlateSet(PlateType.normal))),
   Level(index: 2,
-      duration: const Duration(seconds: 20),
+      duration: const Duration(seconds: 30),
       background: "backimage2.png",
       messageKey: "q_lv2",
       sets: [
@@ -190,7 +190,7 @@ final List<Level> expertLevels = [
         PlateSet(PlateType.tray)
       ]),
   Level(index: 3,
-      duration: const Duration(seconds: 20),
+      duration: const Duration(seconds: 50),
       background: "backimage3.png",
       messageKey: "q_lv3",
       sets: [
@@ -201,7 +201,7 @@ final List<Level> expertLevels = [
         PlateSet(PlateType.tray)
       ]),
   Level(index: 4,
-      duration: const Duration(seconds: 20),
+      duration: const Duration(seconds: 60),
       background: "backimage3.png",
       messageKey: "q_lv4",
       sets: [
@@ -212,7 +212,7 @@ final List<Level> expertLevels = [
         PlateSet(PlateType.bowl)
       ]),
   Level(index: 5,
-      duration: const Duration(seconds: 20),
+      duration: const Duration(seconds: 60),
       background: "backimage4.png",
       messageKey: "q_lv5",
       sets: [
@@ -231,7 +231,7 @@ final List<Level> expertLevels = [
 final List<Level> stage2Levels = [
   // 1분: All 접시 (5개)
   Level(index: 101,
-      duration: const Duration(minutes: 1),
+      duration: const Duration(seconds: 40),
       background: "backimage4.png",
       messageKey: "stage2_1",
       sets: List.generate(5, (_) => PlateSet(PlateType.normal))),
@@ -249,7 +249,7 @@ final List<Level> stage2Levels = [
       ]),
   // 1분: 접시3 + 큰 접시2
   Level(index: 103,
-      duration: const Duration(minutes: 1),
+      duration: const Duration(seconds: 80),
       background: "backimage4.png",
       messageKey: "stage2_3",
       sets: [
@@ -261,7 +261,7 @@ final List<Level> stage2Levels = [
       ]),
   // 1분: 접시2 + 큰 접시2 + 사발1
   Level(index: 104,
-      duration: const Duration(minutes: 1),
+      duration: const Duration(seconds: 80),
       background: "backimage4.png",
       messageKey: "stage2_4",
       sets: [
@@ -273,7 +273,7 @@ final List<Level> stage2Levels = [
       ]),
   // 최종: 접시1 + 큰 접시2 + 사발2 (실장님 기획 최종안)
   Level(index: 105,
-      duration: const Duration(minutes: 5),
+      duration: const Duration(minutes: 3),
       background: "backimage4.png",
       messageKey: "stage2_5",
       sets: [

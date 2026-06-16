@@ -80,6 +80,7 @@ class LandscapeWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.black,
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -300,6 +301,7 @@ class _GameMainWrapperState extends State<GameMainWrapper> {
                 textKeys: ['event1_girl'],
                 speakers: ['girl'],
                 onTap: () {
+                  SoundManager.forceMainLoop();
                   game.overlays.remove('Event1');
                   game.overlays.add('Event2');
                 },
@@ -310,6 +312,7 @@ class _GameMainWrapperState extends State<GameMainWrapper> {
                 textKeys: ['event2_man', 'event2_monkey'],
                 speakers: ['man', 'monkey'],
                 onTap: () {
+                  SoundManager.forceMainLoop();
                   game.overlays.remove('Event2');
                   (game as PlateSpinGame).startStage2();
                 },

@@ -118,8 +118,6 @@ class Plate extends SpriteComponent with HasGameReference<PlateSpinGame> {
     // ---------------------------------------------------------
     if (!falling && !flyingAway && omega <= 3.0) {
       falling = true;
-      SoundManager.playSfxSafe("crash.wav");
-
       // [중요] 게임 본체에 "떨어졌다"고 알림 (Tip: 떨어짐 멘트 출력)
       game.failAndRespawnOrGameOver(fromFly: false);
     }
@@ -162,7 +160,6 @@ class Plate extends SpriteComponent with HasGameReference<PlateSpinGame> {
         // 1초 이상 유지 시 발사!
         if (flatTimer >= 1.0) {
           flyingAway = true;
-          SoundManager.playSfxSafe("fly.wav");
 
           // ▼▼▼ [핵심 수정] ▼▼▼
           // "이건 날아가는 겁니다!" 하고 게임 본체에 알림 (Tip: 날아감 멘트 출력)

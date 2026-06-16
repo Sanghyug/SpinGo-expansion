@@ -175,6 +175,7 @@ class LeaderboardOverlay extends StatelessWidget {
 // ──────────────────────────────────────────────────────────────
 // 이름 입력
 // ──────────────────────────────────────────────────────────────
+
 class NameEntryOverlay extends StatefulWidget {
   static const id = 'NameEntryOverlay';
   final PlateSpinGame game;
@@ -187,26 +188,57 @@ class NameEntryOverlay extends StatefulWidget {
 
 class _NameEntryOverlayState extends State<NameEntryOverlay> {
   final _controller = TextEditingController(text: 'me');
-  String? _error;
   final _focusNode = FocusNode();
+
+  String? _error;
+  bool _saving = false;
 
   bool _valid(String s) {
     final runes = s.runes.toList();
     final isKorean = runes.any((cp) => (cp >= 0xAC00 && cp <= 0xD7A3));
     if (isKorean) return runes.length <= 5;
+
     final ascii = RegExp(r'^[A-Za-z0-9 ]{1,12}$');
     return ascii.hasMatch(s);
   }
 
-  @override
-  void initState() {
-    super.initState();
+  void _openKeyboard() {
+    _focusNode.requestFocus();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusNode.requestFocus();
-      }
+    if (_controller.text == 'me') {
+      _controller.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _controller.text.length,
+      );
+    }
+  }
+
+  Future<void> _submit() async {
+    if (_saving) return;
+
+    final game = widget.game;
+    final name = _controller.text.trim();
+
+    if (name.isEmpty || !_valid(name)) {
+      setState(() => _error = L10n.tr('ai_tip_invalid_name'));
+      return;
+    }
+
+    setState(() {
+      _saving = true;
+      _error = null;
     });
+
+    FocusScope.of(context).unfocus();
+
+    await ScoreManager.addIfTop7(
+      ScoreEntry(name, game.currentScore),
+    );
+
+    if (!mounted) return;
+
+    game.overlays.remove(NameEntryOverlay.id);
+    game.overlays.add(LeaderboardOverlay.id);
   }
 
   @override
@@ -218,72 +250,81 @@ class _NameEntryOverlayState extends State<NameEntryOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    final game = widget.game;
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: Material(
-          color: Colors.black87,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(L10n.tr('congrats'),
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 10),
-                Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(L10n.tr('enter_name_hint'))),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  autofocus: true,
-                  keyboardType: TextInputType.text,
-                  textInputAction: TextInputAction.done,
-                  maxLength: 12,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                  ),
-                  decoration: const InputDecoration(
-                    filled: true,
-                    fillColor: Colors.black54,
-                    border: OutlineInputBorder(),
-                    counterText: '',
-                  ),
-                  onTap: () {
-                    _focusNode.requestFocus();
-                  },
+    return Align(
+      alignment: Alignment.topCenter,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(top: 8),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Material(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      L10n.tr('congrats'),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(L10n.tr('enter_name_hint')),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      minLines: 1,
+                      maxLines: 1,
+                      keyboardType: TextInputType.text,
+                      textInputAction: TextInputAction.done,
+                      maxLength: 12,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                      ),
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        filled: true,
+                        fillColor: Colors.black54,
+                        border: OutlineInputBorder(),
+                        counterText: '',
+                      ),
+                      onTap: () {
+                        _focusNode.requestFocus();
+                      },
+                      onSubmitted: (_) => _submit(),
+                    ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 42,
+                      child: ElevatedButton(
+                        onPressed: _saving ? null : _submit,
+                        child: Text(_saving ? '...' : L10n.tr('register')),
+                      ),
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final name = _controller.text.trim();
-                      if (name.isEmpty || !_valid(name)) {
-                        setState(() =>
-                        _error = L10n.tr('ai_tip_invalid_name'));
-                        return;
-                      }
-                      await ScoreManager.addIfTop7(
-                          ScoreEntry(name, game.currentScore));
-                      game.overlays.remove(NameEntryOverlay.id);
-                      game.overlays.add(LeaderboardOverlay.id);
-                    },
-                    child: Text(L10n.tr('register')),
-                  ),
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 6),
-                  Text(_error!,
-                      style: const TextStyle(color: Colors.redAccent)),
-                ]
-              ],
+              ),
             ),
           ),
         ),
@@ -420,8 +461,14 @@ class GameOverOverlay extends StatelessWidget {
                   width: 180,
                   height: 56,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      SoundManager.stopBgm();
+                      SoundManager.stopMonkeySfx(restartBgm: false);
+
                       game.overlays.remove(GameOverOverlay.id);
+
+                      await Future.delayed(const Duration(milliseconds: 200));
+
                       SystemNavigator.pop();
                     },
                     child: Text(L10n.tr('exit')),
@@ -495,7 +542,18 @@ class PlateSpinGame extends FlameGame with PanDetector, TapCallbacks {
 
   bool get isGameOverForEffects => _isGameOver;
 
+  bool get canStartGimmick {
+    if (_isGameOver || _isRespawning || _inCutscene) return false;
+    if (_plates.isEmpty || _poles.isEmpty) return false;
+
+    if (_levelTime < 3.0) return false;
+    if (remainingSeconds <= 5) return false;
+
+    return true;
+  }
+
   Pole? _holdingMonkeyPole;
+
   double _monkeyHoldTime = 0.0;
   Plate? _holdingMonkeyPlate;
 
@@ -714,6 +772,7 @@ class PlateSpinGame extends FlameGame with PanDetector, TapCallbacks {
 
     if (currentLevelList == expertLevels &&
         currentLevelList[_levelIndex].showEventScene) {
+      SoundManager.forceMainLoop();
       pauseEngine();
       overlays.add('Event1');
       return;
@@ -746,7 +805,7 @@ class PlateSpinGame extends FlameGame with PanDetector, TapCallbacks {
     resumeEngine();
 
     // 3. [음악 버그 해결] 스테이지 2 시작 시 확실하게 메인 BGM 큐!
-    SoundManager.requestMainLoop();
+    SoundManager.forceMainLoop();
   }
 
   // ▼▼▼ 함수 괄호 안에 byMonkey 파라미터가 선언되어 있어야 합니다! ▼▼▼
@@ -783,15 +842,9 @@ class PlateSpinGame extends FlameGame with PanDetector, TapCallbacks {
       SoundManager.playSfxSafe("crash.wav");
     }
 
-    async.Timer(const Duration(milliseconds: 500), () {
-      if (!_isGameOver) {
+    async.Timer(const Duration(milliseconds: 700), () {
+      if (!_isGameOver && _isRespawning) {
         SoundManager.playSfxSafe("crowd.wav");
-      }
-    });
-
-    async.Timer(const Duration(milliseconds: 2000), () {
-      if (!_isGameOver) {
-        SoundManager.forceMainLoop();
       }
     });
 
@@ -808,9 +861,10 @@ class PlateSpinGame extends FlameGame with PanDetector, TapCallbacks {
         SoundManager.forceMainLoop();
       });
     } else {
-      _showTipFor(const Duration(seconds: 3));
-      _respawnCooldown = 3.0;
-      async.Timer(const Duration(seconds: 3), () {
+      _showTipFor(const Duration(milliseconds: 800));
+      _respawnCooldown = 0.8;
+
+      async.Timer(const Duration(milliseconds: 800), () {
         _tipText?.removeFromParent();
         _tipText = null;
         gameOver();
@@ -835,19 +889,51 @@ class PlateSpinGame extends FlameGame with PanDetector, TapCallbacks {
   void gameOver() {
     if (_isGameOver) return;
 
+    _isGameOver = true;
+    _isRespawning = false;
+    _respawnCooldown = 0.0;
+
+    _cancelTimer();
+
     _windActive = false;
     _windEffectLeft = 0.0;
     _windCooldown = 9999.0;
     _windWarningText?.removeFromParent();
     _windWarningText = null;
-    SoundManager.forceMainLoop();
 
-    _isGameOver = true;
-    _cancelTimer();
-    SoundManager.requestWelcomeLoop();
+    _holdingMonkeyPole = null;
+    _holdingMonkeyPlate = null;
+    _monkeyHoldTime = 0.0;
+
+    for (final pole in _poles) {
+      pole.isShakenByMonkey = false;
+      pole.resistanceAmount = 0;
+    }
+
+    children.whereType<Monkey>().forEach((m) {
+      m.removeFromParent();
+    });
+    _stageMonkey = null;
+
+    // 효과음과 원숭이 사운드 정리
+    SoundManager.stopAllSfx();
+
+    // 게임오버 음악을 강제로 느린 음악으로 전환
+    SoundManager.forceWelcomeLoop();
+
     pauseEngine();
-    ScoreManager.qualifies(_score).then((ok) =>
-        overlays.add(ok ? NameEntryOverlay.id : LeaderboardOverlay.id));
+
+    ScoreManager.qualifies(_score).then((ok) {
+      if (ok) {
+        overlays.remove(HudOverlay.id);
+        overlays.remove(MathOverlay.id);
+        overlays.add(NameEntryOverlay.id);
+      } else {
+        overlays.remove(HudOverlay.id);
+        overlays.remove(MathOverlay.id);
+        overlays.add(LeaderboardOverlay.id);
+      }
+    });
   }
 
   void _addScore(int amount) {
@@ -1144,10 +1230,7 @@ class PlateSpinGame extends FlameGame with PanDetector, TapCallbacks {
 
   void _updateWind(double dt) {
     if (!_shouldUseWind) return;
-    if (_isGameOver || _isRespawning || _inCutscene) return;
-    if (_plates.isEmpty) return;
-
-    if (_levelTime < 3.0) return;
+    if (!canStartGimmick) return;
 
     if (_windActive) {
       _windEffectLeft -= dt;
@@ -1194,7 +1277,7 @@ class PlateSpinGame extends FlameGame with PanDetector, TapCallbacks {
   }
 
   void _startWindEvent() {
-    if (_isGameOver || _isRespawning || _inCutscene) return;
+    if (!canStartGimmick) return;
     if (!_shouldUseWind) return;
 
     _windActive = true;
